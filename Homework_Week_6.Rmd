@@ -4,12 +4,11 @@ author: "Arora"
 date: "October 23, 2017"
 output: html_document
 ---
-```{r, eval=FALSE}
-Z.prop.test <- function(p1, n1, p0, p2, n2, alternative = "two.tailed", conf.level = 0.975, k=10) 
-    p<-rep(NA, k)
+```Z.prop.test <- function(p1, n1, p0, p2, n2, alternative = "two.tailed", conf.level = 0.975, k=1000){
+    p<-rep(NA,k)
     for (i in 1:k){
       p1
-      n1<-n
+      n1
       p0
       conf.level<-0.975
       p2<-NULL
@@ -19,57 +18,57 @@ Z.prop.test <- function(p1, n1, p0, p2, n2, alternative = "two.tailed", conf.lev
       alternative<-"two tailed"
 
     if (alternative == "less") {
-            P<-p[i] <- pnorm(z, lower.tail = TRUE)  # calculates the associated p value
+            p[i] <- pnorm(z, lower.tail = TRUE)  # calculates the associated p value
             hyp <- "p1 < p0"
         }
         if (alternative == "greater") {
-            P<-p[i] <- pnorm(z, lower.tail = FALSE)
+            p[i] <- pnorm(z, lower.tail = FALSE)
             hyp <- "p1 > p0"
         }
         if (alternative == "two.tailed") {
             if (z > 0) {
-                P<-p[i] <- 2 * pnorm(z, lower.tail = FALSE)
+                p[i] <- 2 * pnorm(z, lower.tail = FALSE)
             }
             if (z < 0) {
-                P<-p[i] <- 2 * pnorm(z, lower.tail = TRUE)
+                p[i] <- 2 * pnorm(z, lower.tail = TRUE)
             }
       
     if (p2 == is.NULL) {
       Z=(p1-p0)/sqrt((p0*(1-p0))/n1)
     }
      if (alternative == "less") {
-            P<-p[i] <- pnorm(z, lower.tail = TRUE)  # calculates the associated p value
+            p[i] <- pnorm(z, lower.tail = TRUE)  # calculates the associated p value
             hyp <- "p1 < p0"
         }
         if (alternative == "greater") {
-            P<-p[i] <- pnorm(z, lower.tail = FALSE)
+            p[i] <- pnorm(z, lower.tail = FALSE)
             hyp <- "p1 > p0"
         }
         if (alternative == "two.tailed") {
             if (z > 0) {
-                P<-p[i] <- 2 * pnorm(z, lower.tail = FALSE)
+                p[i] <- 2 * pnorm(z, lower.tail = FALSE)
             }
             if (z < 0) {
-                P<-p[i] <- 2 * pnorm(z, lower.tail = TRUE)
+                p[i] <- 2 * pnorm(z, lower.tail = TRUE)
             }
       
     if (n2 == is.NULL) {
      Z=(p1-p0)/sqrt((p0*(1-p0))/n1) 
     }
      if (alternative == "less") {
-            P<-p[i] <- pnorm(z, lower.tail = TRUE)  # calculates the associated p value
+            p[i] <- pnorm(z, lower.tail = TRUE)  # calculates the associated p value
             hyp <- "p1 < p0"
         }
         if (alternative == "greater") {
-            P<-p[i] <- pnorm(z, lower.tail = FALSE)
+            p[i] <- pnorm(z, lower.tail = FALSE)
             hyp <- "p1 > p0"
         }
         if (alternative == "two.tailed") {
             if (z > 0) {
-                P<-p[i] <- 2 * pnorm(z, lower.tail = FALSE)
+                p[i] <- 2 * pnorm(z, lower.tail = FALSE)
             }
             if (z < 0) {
-                P<-p[i] <- 2 * pnorm(z, lower.tail = TRUE)
+                p[i] <- 2 * pnorm(z, lower.tail = TRUE)
             }
       }
     }
@@ -97,9 +96,9 @@ Z.prop.test <- function(p1, n1, p0, p2, n2, alternative = "two.tailed", conf.lev
     ##I didn't know which n and p where referred in this particular part of the homework so I used n1 and p1 because that seemed most logical
     }
 
-return(Z)
-return(CI)
-return(P)
+return(list(c(Z, p[i], CI)))
+
+  }
 }
 ```
 
