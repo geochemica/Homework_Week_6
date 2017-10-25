@@ -117,18 +117,19 @@ g<-ggplot(data=d, aes(x=Brain_Size_Species_Mean, y=MaxLongevity_m))
 g<-g+geom_point()
 g<-g+geom_smooth(method="lm", formula=y~x)
 g
-lm_eqn <- function(d){
-    m <- lm(y ~ x, d);
+v<-data.frame(d)
+lm_eqn = function(v){
+    m = lm(y ~ x, v);
     eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
          list(a = format(coef(m)[1], digits = 2), 
               b = format(coef(m)[2], digits = 2), 
              r2 = format(summary(m)$r.squared, digits = 3)))
     as.character(as.expression(eq));                 
 }
-lm_eqn
-g<-g+geom_text(data=lm_eqn,aes(x = 25, y = 300,label=V1), parse = TRUE, inherit.aes=FALSE) + facet_grid(group~.)
+eq <- ddply(v,.(Brain_Size_Species_Mean),lm_eqn)
+g<-g+geom_text(data=eq,label=lm_eqn(v), parse=TRUE)
 g
-#I haven't yet figured out how to label the equation
+#I haven't yet figured out how to label the equation; my current error says that the within the function, MaxLongevity could not be found
 ```
 
 
@@ -192,13 +193,18 @@ head(df)
 ```
 
 ```{r}
-g <- ggplot(data = df, aes(x = x, y = y))
+g <- ggplot(data = df, aes(x = x, y=y))+geom_line(aes(y=CIfit, colour = "CIfit")) + geom_line(aes(y=CIlwr, colour = "CIlwr")) +geom_line(aes(y=CIupr, colour = "CIupr")) + scale_colour_manual("",values=c("CIfit" = "black", "CIupr"="blue", "CIlwr"="pink")) + xlab(" ")
 g <- g + geom_point(alpha = 1/2)
-g <- g + geom_line(aes(x = x, y = CIfit), colour = "black")
-g <- g + geom_line(aes(x = x, y = CIlwr), colour = "blue")
-g <- g + geom_line(aes(x = x, y = CIupr), colour = "blue")
 g
 ```
+
+  scale_colour_manual("", 
+                      breaks = c("TempMedia", "TempMax", "TempMin"),
+                      values = c("TempMedia"="green", "TempMax"="red", 
+                                 "TempMin"="blue")) +
+  xlab(" ") +
+  scale_y_continuous("Temperatura (C)", limits = c(-10,40)) + 
+  labs(title="TITULO")
 
 ```{r}
 g<-lm(df)
@@ -207,16 +213,25 @@ pi <- predict(g, newdata = data.frame(Mean_Brain_Size_Species = 800), interval =
 #I converted the dataframe df into a lm() but it not does not work because it cannot find yhat even though yhat has been defined above.  
 ```
 
-#I was unable to produce PI because of R's inability to find yhat even though yhat is being used and created. For this reason I cannot evaluate whether or not I trust the model. However as far as I can tell, I would trust neither model because most of the points fall outside of the 90% confidence interval. This may however be because I removed all the na points right in the beginning because I could not get anything to work at the time. 
-
-#From my current info available about both models, I think the log transformed on would be better because it seems that it takes into account more of the points (the untransformed g plot above has several values that completely skew the graph which do not exist in the log plot). However once I get the predicted values to work, this analysis will be easier. 
-
 ```{r}
 plot(data=d, log(Brain_Size_Species_Mean) ~ log(MaxLongevity_m))
 g<-ggplot(data=d, aes(x=log(Brain_Size_Species_Mean), y=log(MaxLongevity_m)))
 g<-g+geom_point()
 g<-g+geom_smooth(method="lm", formula=y~x)
 g
+v<-data.frame(d)
+lm_eqn = function(v){
+    m = lm(y ~ x, v);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(coef(m)[1], digits = 2), 
+              b = format(coef(m)[2], digits = 2), 
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));                 
+}
+eq <- ddply(v,.(Brain_Size_Species_Mean),lm_eqn)
+g<-g+geom_text(data=eq,label=lm_eqn(v), parse=TRUE)
+g
+#I haven't yet figured out how to label the equation; my current error says that the within the function, MaxLongevity could not be found
 a<-log(d$Brain_Size_Species_Mean)
 b<-log(d$MaxLongevity_m)
 ```
@@ -240,11 +255,8 @@ names(df) <- c("x", "y", "yhat", "CIfit", "CIlwr", "CIupr")
 head(df)
 ```
 ```{r}
-g <- ggplot(data = df, aes(x = x, y = y))
+g <- ggplot(data = df, aes(x = x, y=y))+geom_line(aes(y=CIfit, colour = "CIfit")) + geom_line(aes(y=CIlwr, colour = "CIlwr")) +geom_line(aes(y=CIupr, colour = "CIupr")) + scale_colour_manual("",values=c("CIfit" = "black", "CIupr"="blue", "CIlwr"="pink")) + xlab(" ")
 g <- g + geom_point(alpha = 1/2)
-g <- g + geom_line(aes(x = x, y = CIfit), colour = "black")
-g <- g + geom_line(aes(x = x, y = CIlwr), colour = "blue")
-g <- g + geom_line(aes(x = x, y = CIupr), colour = "blue")
 g
 ```
 ```{r}
@@ -254,5 +266,6 @@ pi <- predict(g, newdata = data.frame(a = 800), interval = "prediction",
 pi
 #when I search for yhat in the consule it does not come up either. 
 ```
+#I was unable to produce PI because of R's inability to find yhat even though yhat is being used and created. For this reason I cannot evaluate whether or not I trust the model. However as far as I can tell, I would trust neither model because most of the points fall outside of the 90% confidence interval. This may however be because I removed all the na points right in the beginning because I could not get anything to work at the time. 
 
-#Notes: I could not figure out how to make a legend. So far I have the following:
+#From my current info available about both models, I think the log transformed on would be better because it seems that it takes into account more of the points (the untransformed g plot above has several values that completely skew the graph which do not exist in the log plot). However once I get the predicted values to work, this analysis will be easier.
