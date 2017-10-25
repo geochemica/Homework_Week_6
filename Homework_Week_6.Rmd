@@ -96,18 +96,163 @@ output: html_document
     ##I didn't know which n and p where referred in this particular part of the homework so I used n1 and p1 because that seemed most logical
     }
 
-return(list(c(Z, p[i], CI)))
-
-  }
+return(list(Z, p[i], CI)
+    #this does not return anything except for the p[i] value and I have tried running the component parts of this and they work. I've tried moving curly brackets and that doesn't seem to be the problem.
 }
 ```
 
 
+```{r}
+library(curl)
+library(ggplot2)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall17/KamilarAndCooperData.csv")
+d2 <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+d<-na.omit(d2)
+#I removed na points because I could not do calculations without it
+head(d)
+```
+```{r}
+plot(data=d,Brain_Size_Species_Mean ~ MaxLongevity_m)
+g<-ggplot(data=d, aes(x=Brain_Size_Species_Mean, y=MaxLongevity_m))
+g<-g+geom_point()
+g<-g+geom_smooth(method="lm", formula=y~x)
+g
+lm_eqn <- function(d){
+    m <- lm(y ~ x, d);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(coef(m)[1], digits = 2), 
+              b = format(coef(m)[2], digits = 2), 
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));                 
+}
+lm_eqn
+g<-g+geom_text(data=lm_eqn,aes(x = 25, y = 300,label=V1), parse = TRUE, inherit.aes=FALSE) + facet_grid(group~.)
+g
+#I haven't yet figured out how to label the equation
+```
 
 
 ```{r}
-library(curl)
-f <- curl("https://github.com/fuzzyatelin/fuzzyatelin.github.io/blob/master/AN597_Fall17/KamilarAndCooperData.csv")
-d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(d)
+m <- lm(data = d, Brain_Size_Species_Mean ~ MaxLongevity_m)
+
+SSY <- sum((m$model$Brain_Size_Species_Mean - mean(m$model$Brain_Size_Species_Mean))^2)  # height - mean(height)
+SSY
+
+SSR <- sum((m$fitted.values - mean(m$model$Brain_Size_Species_Mean))^2)  # predicted height - mean height
+SSR
+
+SSE <- sum((m$model$Brain_Size_Species_Mean - m$fitted.values)^2)  # height - predicted height
+SSE
+
+df_regression <- 1
+df_error <- 998
+df_y <- 999
+MSR <- SSR/df_regression
+MSE <- SSE/df_error
+MSY <- SSY/df_y
+
+fratio <- MSR/MSE
+fratio
+
+rsquared <- SSR/SSY
+rsquared
+rho <- sqrt(rsquared)
+rho
+
+SSX <- sum((m$model$Brain_Size_Species_Mean - mean(m$model$Brain_Size_Species_Mean))^2)
+SEbeta1 <- sqrt(MSE/SSX)
+SEbeta1
+
+#the standard error of the intercept, Beta naught is
+SEbeta0 <- sqrt((MSE * sum(m$model$Brain_Size_Species_Mean^2))/(1000 * SSX))
+SEbeta0
+
+#It's very strange the beta one does not equal the intercept as given in the summary below which makes me think that I've done something wrong however I have copied this straight from the module 13 so I don't know what's up. 
 ```
+
+```{r}
+fit<-lm(d$Brain_Size_Species_Mean~d$MaxLongevity_m)
+summary(fit)
+#the Beta value is 0.1158 and the p value is 2.176e-05
+```
+#p value is less than alpha so reject β1
+
+```{r}
+ci<-predict(fit, newdata = data.frame(Brain_Size_Species_Mean = d$Brain_Size_Species_Mean), interval="confidence", level=0.90)
+h_hat <- predict(fit, newdata = data.frame(Brain_Size_Species_Mean = d$Brain_Size_Species_Mean))
+df <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hat))
+names(df) <- c("x", "y", "yhat")
+head(df)
+g <- ggplot(data = df, aes(x = Brain_Size_Species_Mean, y = yhat))
+```
+```{r}
+df <- cbind(df, ci)
+names(df) <- c("x", "y", "yhat", "CIfit", "CIlwr", "CIupr")
+head(df)
+```
+
+```{r}
+g <- ggplot(data = df, aes(x = x, y = y))
+g <- g + geom_point(alpha = 1/2)
+g <- g + geom_line(aes(x = x, y = CIfit), colour = "black")
+g <- g + geom_line(aes(x = x, y = CIlwr), colour = "blue")
+g <- g + geom_line(aes(x = x, y = CIupr), colour = "blue")
+g
+```
+
+```{r}
+g<-lm(df)
+pi <- predict(g, newdata = data.frame(Mean_Brain_Size_Species = 800), interval = "prediction", 
+    level = 0.90)  # for a single value
+#I converted the dataframe df into a lm() but it not does not work because it cannot find yhat even though yhat has been defined above.  
+```
+
+#I was unable to produce PI because of R's inability to find yhat even though yhat is being used and created. For this reason I cannot evaluate whether or not I trust the model. However as far as I can tell, I would trust neither model because most of the points fall outside of the 90% confidence interval. This may however be because I removed all the na points right in the beginning because I could not get anything to work at the time. 
+
+#From my current info available about both models, I think the log transformed on would be better because it seems that it takes into account more of the points (the untransformed g plot above has several values that completely skew the graph which do not exist in the log plot). However once I get the predicted values to work, this analysis will be easier. 
+
+```{r}
+plot(data=d, log(Brain_Size_Species_Mean) ~ log(MaxLongevity_m))
+g<-ggplot(data=d, aes(x=log(Brain_Size_Species_Mean), y=log(MaxLongevity_m)))
+g<-g+geom_point()
+g<-g+geom_smooth(method="lm", formula=y~x)
+g
+a<-log(d$Brain_Size_Species_Mean)
+b<-log(d$MaxLongevity_m)
+```
+```{r}
+fit<-lm(data=d,a~b)
+summary(fit)
+# beta1 value here is 0.4943 and the p value is 0.0004583 and the alpha is 0.1 and so again we reject the null that beta1 = 0
+```
+```{r}
+ci<-predict(fit, newdata=data.frame(a), interval="confidence", level=0.90)
+h_hat <- predict(fit, newdata = data.frame(a = a))
+df <- data.frame(cbind(a, b, h_hat))
+names(df) <- c("x", "y", "yhat")
+head(df)
+g <- ggplot(data = df, aes(x = Brain_Size_Species_Mean, y = yhat))
+#so this entire thing does not work however I have 
+```
+```{r}
+df <- cbind(df, ci)
+names(df) <- c("x", "y", "yhat", "CIfit", "CIlwr", "CIupr")
+head(df)
+```
+```{r}
+g <- ggplot(data = df, aes(x = x, y = y))
+g <- g + geom_point(alpha = 1/2)
+g <- g + geom_line(aes(x = x, y = CIfit), colour = "black")
+g <- g + geom_line(aes(x = x, y = CIlwr), colour = "blue")
+g <- g + geom_line(aes(x = x, y = CIupr), colour = "blue")
+g
+```
+```{r}
+g<-lm(df)
+pi <- predict(g, newdata = data.frame(a = 800), interval = "prediction", 
+    level = 0.90)  # for a single value
+pi
+#when I search for yhat in the consule it does not come up either. 
+```
+
+#Notes: I could not figure out how to make a legend. So far I have the following:
